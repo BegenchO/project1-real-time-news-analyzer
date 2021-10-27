@@ -2,6 +2,8 @@ package project1
 
 // imports
 import scala.io.StdIn.readLine
+import scalaj.http._
+
 
 object Main {
     def main (args: Array[String]): Unit = {
@@ -20,16 +22,17 @@ object Main {
             // display menu
             println("Main menu")
             println("1. Update username/password")
-            println("2. Exit the program")
+            println("2. Get Data")
+            println("3. Exit the program")
 
             val command = readLine()
 
             command match {
                 case "1" => {
                     println("Updating password")
-                    on = false
                 }
-                case "2" => on = false
+                case "2" => fetchAPI()
+                case "3" => on = false
                 case _ => println("Command not found!!! Please enter a valid command!")
             }
 
@@ -79,6 +82,12 @@ object Main {
         username
 
     } // end login
+
+    def fetchAPI(): Unit = {
+        val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
+        val response: HttpResponse[String] = Http(url).asString
+        println(response.body)
+    } // end fetchAPI
 
 
 } // end class
