@@ -12,8 +12,37 @@ object Main {
         // Login success
         println("Login success. Welcome " + username)
 
-        
-       
+
+        // Main menu
+        var on = true
+
+        while (on) {
+            // display menu
+            println("Main menu")
+            println("1. Update username/password")
+            println("2. Exit the program")
+
+            val command = readLine()
+
+            command match {
+                case "1" => {
+                    println("Updating password")
+                    on = false
+                }
+                case "2" => on = false
+                case _ => println("Command not found!!! Please enter a valid command!")
+            }
+
+
+
+
+        } // end whle
+
+        // Exit
+        println("Terminating program...")
+        Thread.sleep(1000)
+
+        println("Session ended!")
 
     } // end main
 
