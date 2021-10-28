@@ -63,10 +63,10 @@ object Main {
         
 
         // Login
-        //val username = login()
+        val username = login()
 
         // Login success
-        //println("Login success. Welcome " + username)
+        println("Login success. Welcome " + username)
 
         // Main menu
         displayMenu()
@@ -87,7 +87,6 @@ object Main {
 
     // Handles login
     def login(): String = {
-        val users = Map("Admin"->"password","Dani"->"password", "George"->"password").withDefaultValue("Not Found")
 
         var username = ""
         var loginSuccess = false;
@@ -103,7 +102,7 @@ object Main {
 
             loading("Loading...", 1)
             
-            if (users(username) != "Not found" && (users(username) == password)) {
+            if (password == "password" && username == "Admin") {
                 loginSuccess = true
             } else {
                 loading(1)
