@@ -38,11 +38,6 @@ object Main {
 
     } // end main
 
-    
-    def connectToHive(): Unit = {
-        
-    }
-
 
 
     // Handles login
@@ -124,6 +119,109 @@ object Main {
     } // end login
 
 
+
+    def updateUserMenu(): Unit = {
+        
+        var on = true
+
+        while(on) {
+            // display menu
+            println("Update username/password")
+            println("1. Update USERNAME")
+            println("2. Update PASSWORD")
+            println("0. Back to Main Menu")
+
+            val command = readLine()
+
+            command match {
+                case "1" => {
+                    loading(1)
+                    print("Please provide CURRENT username: ")
+                    val username = readLine()
+                    print("Please provide NEW username: ")
+                    val value = readLine()
+                    updateUsernamePassword("username", username, value)
+                }
+                case "2" => {
+                    loading(1)
+                    var passwordNotMatch = true
+                    var value = ""
+
+                    print("Please provide your username: ")
+                    val username = readLine()
+
+                    while (passwordNotMatch) {
+                        
+                        print("Please provide new password: ")
+                        val value = readLine()
+                        print("Please confirm new password: ")
+                        val value2 = readLine()
+
+                        if (value == value2) passwordNotMatch = false
+
+                    }
+
+                    if (value.length() > 0) {
+                        println("Passwords match. Updating..")
+                        loading(1)
+                        updateUsernamePassword("password", username, value)
+                    }
+                    
+                }
+                case "0" => on = false
+                case _ => println("Command not found!!! Please enter a valid command!")
+            }
+
+
+        } // end while
+
+    } // end updateUserMEnu
+
+
+    def updateUsernamePassword(column: String, username: String, value: String): Unit = {
+
+        // Hive connection
+        var connection: java.sql.Connection = null;
+
+          
+        try {
+            var driverName = "org.apache.hive.jdbc.HiveDriver"
+            val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/project1"
+
+            Class.forName(driverName)
+
+            connection = DriverManager.getConnection(connectionString, "", "")
+            val statement = connection.createStatement()
+
+            var hiveQuery = s"UPDATE users SET ${column}='${value}' WHERE username='${username}'";
+            
+            var hiveResponse = statement.executeQuery(hiveQuery)
+
+            loading(s"${column} was successfully updated...", 1)
+
+        } catch {
+            case exception: Throwable => {
+                exception.printStackTrace();
+                throw new Exception(s"${exception.getMessage()}")
+            }
+        } finally {
+            try {
+                if (connection != null) connection.close()
+            } catch {
+                case exception: Throwable => {
+                    exception.printStackTrace();
+                    throw new Exception(s"${exception.getMessage()}")
+                }
+            }
+        } // end try catch hive
+
+    
+
+    } // end update Username
+
+
+
+
     // Fetches data from TMDB
     def fetchAPI(): Unit = {
         val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
@@ -151,10 +249,7 @@ object Main {
             val command = readLine()
 
             command match {
-                case "1" => {
-                    loading(1)
-                    println("Updating password")
-                }
+                case "1" => updateUserMenu()
                 case "2" => fetchAPI()
                 case "3" => displayAnalyzeMenu()
                 case "0" => on = false
