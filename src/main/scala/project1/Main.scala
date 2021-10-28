@@ -1,22 +1,72 @@
 package project1
 
-// imports
-import scala.io.StdIn.readLine
-import scalaj.http._
+// Other imports
+import scala.io.StdIn.readLine  // User CL Input
+import java.io.IOException
+import scala.util.Try
+
+
+// Hive Imports
+import java.sql.SQLException
+import java.sql.Connection
+import java.sql.ResultSet
+import java.sql.Statement
+import java.sql.DriverManager
 
 
 object Main {
     def main (args: Array[String]): Unit = {
 
+        // Hive connection
+        var connection: java.sql.Connection = null;
+
+        println("Connecting to Hive and getting users...")
+
+        try {
+            var driverName = "org.apache.hive.jdbc.HiveDriver"
+            val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/project1"
+
+            Class.forName(driverName)
+
+            connection = DriverManager.getConnection(connectionString, "", "")
+            val statement = connection.createStatement()
+
+            var hiveQuery = "SELECT * FROM users"
+            var hiveResponse = statement.executeQuery(hiveQuery)
+
+            while(hiveResponse.next()) {
+                println(hiveResponse.getString(1), hiveResponse.getString(2))
+            }
+
+        } catch {
+            case exception: Throwable => {
+                exception.printStackTrace();
+                throw new Exception(s"${exception.getMessage()}")
+            }
+        } finally {
+            try {
+                if (connection != null) connection.close()
+            } catch {
+                case exception: Throwable => {
+                    exception.printStackTrace();
+                    throw new Exception(s"${exception.getMessage()}")
+                }
+            }
+        } // end try catch hive
+
+
+        // App CLI Presentation
         println("-----Movies Trends-----")
 
         loading(1)
 
+        
+
         // Login
-        val username = login()
+        //val username = login()
 
         // Login success
-        println("Login success. Welcome " + username)
+        //println("Login success. Welcome " + username)
 
         // Main menu
         displayMenu()
@@ -27,6 +77,11 @@ object Main {
         println("Session ended!")
 
     } // end main
+
+    
+    def connectToHive(): Unit = {
+        
+    }
 
 
 
@@ -65,8 +120,11 @@ object Main {
     // Fetches data from TMDB
     def fetchAPI(): Unit = {
         val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
-        val response: HttpResponse[String] = Http(url).asString
-        println(response.body)
+        loading("Fetching Data...")
+        val result = scala.io.Source.fromURL(url).mkString
+        loading("Printing Data...", 1)
+        print(result)
+        
     } // end fetchAPI
 
     
@@ -139,7 +197,10 @@ object Main {
         Thread.sleep((delay * 1000).toInt)
     }
 
-    
+    def loading(text: String): Unit = {
+        println(text)
+    }
+
     def loading(text: String, delay: Double): Unit = {
         println(text)
         Thread.sleep((delay * 1000).toInt)
