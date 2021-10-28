@@ -17,50 +17,10 @@ import java.sql.DriverManager
 object Main {
     def main (args: Array[String]): Unit = {
 
-        // Hive connection
-        var connection: java.sql.Connection = null;
-
-        println("Connecting to Hive and getting users...")
-
-        try {
-            var driverName = "org.apache.hive.jdbc.HiveDriver"
-            val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/project1"
-
-            Class.forName(driverName)
-
-            connection = DriverManager.getConnection(connectionString, "", "")
-            val statement = connection.createStatement()
-
-            var hiveQuery = "SELECT * FROM users"
-            var hiveResponse = statement.executeQuery(hiveQuery)
-
-            while(hiveResponse.next()) {
-                println(hiveResponse.getString(1), hiveResponse.getString(2))
-            }
-
-        } catch {
-            case exception: Throwable => {
-                exception.printStackTrace();
-                throw new Exception(s"${exception.getMessage()}")
-            }
-        } finally {
-            try {
-                if (connection != null) connection.close()
-            } catch {
-                case exception: Throwable => {
-                    exception.printStackTrace();
-                    throw new Exception(s"${exception.getMessage()}")
-                }
-            }
-        } // end try catch hive
-
-
         // App CLI Presentation
         println("-----Movies Trends-----")
 
         loading(1)
-
-        
 
         // Login
         val username = login()
@@ -88,30 +48,78 @@ object Main {
     // Handles login
     def login(): String = {
 
-        var username = ""
+        var usernameInput = ""
+        var passwordInput = ""
+
+        var usernameFromDB = ""
+        var passwordFromDB = ""
+
         var loginSuccess = false;
+
+        // Hive connection
+        var connection: java.sql.Connection = null;
 
         while (!loginSuccess) {
             // First readLine is skipped for some reason
             print("Enter your username: ")
-            username = readLine()
+            usernameInput = readLine()
 
 
             print("Enter your password: ")
-            val password = readLine()
+            passwordInput = readLine()
 
             loading("Loading...", 1)
+
+            if (usernameInput.length > 0) {
+                try {
+                    var driverName = "org.apache.hive.jdbc.HiveDriver"
+                    val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/project1"
+
+                    Class.forName(driverName)
+
+                    connection = DriverManager.getConnection(connectionString, "", "")
+                    val statement = connection.createStatement()
+
+                    var hiveQuery = s"SELECT username, password FROM users WHERE username='${usernameInput}'"
+                    var hiveResponse = statement.executeQuery(hiveQuery)
+
+                    while(hiveResponse.next()) {
+                        usernameFromDB = hiveResponse.getString(1)
+                        passwordFromDB = hiveResponse.getString(2)
+                    }
+
+                } catch {
+                    case exception: Throwable => {
+                        exception.printStackTrace();
+                        throw new Exception(s"${exception.getMessage()}")
+                    }
+                } finally {
+                    try {
+                        if (connection != null) connection.close()
+                    } catch {
+                        case exception: Throwable => {
+                            exception.printStackTrace();
+                            throw new Exception(s"${exception.getMessage()}")
+                        }
+                    }
+                } // end try catch hive
+            }
             
-            if (password == "password" && username == "Admin") {
-                loginSuccess = true
-            } else {
-                loading(1)
-                println("Login fail. Please try again")
-            } 
+
+            if (usernameFromDB != "" && passwordFromDB != "") {
+
+                if (usernameInput == usernameFromDB && passwordInput == passwordFromDB) {
+                    loginSuccess = true
+                } else {
+                    loading(1)
+                    println("Login fail. Please try again")
+                } 
+            } // end if
+            
         
         } // end while
 
-        username
+        usernameFromDB
 
     } // end login
 
