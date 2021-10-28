@@ -1,10 +1,11 @@
-package project1
+package project1;
 
 // Other imports
 import scala.io.StdIn.readLine  // User CL Input
 import java.io.IOException
 import scala.util.Try
 
+import project1.User
 
 // Hive Imports
 import java.sql.SQLException
@@ -17,13 +18,18 @@ import java.sql.DriverManager
 object Main {
     def main (args: Array[String]): Unit = {
 
+        // Load Users
+        val admin = new User("Admin", "password")
+        val user = new User("User", "password")
+        val users = Seq(admin, user)
+        
         // App CLI Presentation
         println("-----Movies Trends-----")
 
         loading(1)
 
         // Login
-        val username = login()
+        val username = login(users)
 
         // Login success
         println("Login success. Welcome " + username)
@@ -41,80 +47,38 @@ object Main {
 
 
     // Handles login
-    def login(): String = {
+    def login(users: Seq[User]): String = {
 
         var usernameInput = ""
         var passwordInput = ""
 
-        var usernameFromDB = ""
-        var passwordFromDB = ""
 
         var loginSuccess = false;
-
-        // Hive connection
-        var connection: java.sql.Connection = null;
 
         while (!loginSuccess) {
             // First readLine is skipped for some reason
             print("Enter your username: ")
             usernameInput = readLine()
 
-
             print("Enter your password: ")
-            passwordInput = readLine()
+            passwordInput = readLine()         
 
-            loading("Loading...", 1)
-
-            if (usernameInput.length > 0) {
-                try {
-                    var driverName = "org.apache.hive.jdbc.HiveDriver"
-                    val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/project1"
-
-                    Class.forName(driverName)
-
-                    connection = DriverManager.getConnection(connectionString, "", "")
-                    val statement = connection.createStatement()
-
-                    var hiveQuery = s"SELECT username, password FROM users WHERE username='${usernameInput}'"
-                    var hiveResponse = statement.executeQuery(hiveQuery)
-
-                    while(hiveResponse.next()) {
-                        usernameFromDB = hiveResponse.getString(1)
-                        passwordFromDB = hiveResponse.getString(2)
+            // Verify user from users list
+            if (usernameInput.length() > 0 && passwordInput.length() > 0) {
+                for (user <- users) {
+                    if (user.getUsername == usernameInput && user.getPassword == passwordInput) {
+                        loginSuccess = true
                     }
-
-                } catch {
-                    case exception: Throwable => {
-                        exception.printStackTrace();
-                        throw new Exception(s"${exception.getMessage()}")
-                    }
-                } finally {
-                    try {
-                        if (connection != null) connection.close()
-                    } catch {
-                        case exception: Throwable => {
-                            exception.printStackTrace();
-                            throw new Exception(s"${exception.getMessage()}")
-                        }
-                    }
-                } // end try catch hive
-            }
-            
-
-            if (usernameFromDB != "" && passwordFromDB != "") {
-
-                if (usernameInput == usernameFromDB && passwordInput == passwordFromDB) {
-                    loginSuccess = true
-                } else {
-                    loading(1)
-                    println("Login fail. Please try again")
-                } 
-            } // end if
-            
+                }
+            } else {
+                loading(1)
+                println("Login fail. Please try again")
+            } // end if else
+        
         
         } // end while
 
-        usernameFromDB
+        usernameInput
 
     } // end login
 
