@@ -8,6 +8,10 @@ import scalaj.http._
 object Main {
     def main (args: Array[String]): Unit = {
 
+        println("-----Movies Trends-----")
+
+        loading(1)
+
         // Login
         val username = login()
 
@@ -26,9 +30,9 @@ object Main {
 
 
 
-    
+    // Handles login
     def login(): String = {
-        val users = Map("Dani"->"password", "George"->"password").withDefaultValue("Not Found")
+        val users = Map("Admin"->"password","Dani"->"password", "George"->"password").withDefaultValue("Not Found")
 
         var username = ""
         var loginSuccess = false;
@@ -58,6 +62,7 @@ object Main {
     } // end login
 
 
+    // Fetches data from TMDB
     def fetchAPI(): Unit = {
         val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
         val response: HttpResponse[String] = Http(url).asString
@@ -65,6 +70,7 @@ object Main {
     } // end fetchAPI
 
     
+    // Displays Main Menu
     def displayMenu(): Unit = {
         
         var on = true
@@ -81,6 +87,7 @@ object Main {
 
             command match {
                 case "1" => {
+                    loading(1)
                     println("Updating password")
                 }
                 case "2" => fetchAPI()
@@ -94,6 +101,7 @@ object Main {
     } // end displayMenu
 
 
+    // Display sub menu Analyze
     def displayAnalyzeMenu(): Unit = {
         var on = true
 
@@ -123,14 +131,16 @@ object Main {
                 case _ => println("Command not found!!! Please enter a valid command!")
             }
         }
-    }
+    } // end display analyze menu
 
-    def loading(delay: Float): Unit = {
+
+    // Mimics loading between commands
+    def loading(delay: Double): Unit = {
         Thread.sleep((delay * 1000).toInt)
     }
 
     
-    def loading(text: String, delay: Float): Unit = {
+    def loading(text: String, delay: Double): Unit = {
         println(text)
         Thread.sleep((delay * 1000).toInt)
     }
