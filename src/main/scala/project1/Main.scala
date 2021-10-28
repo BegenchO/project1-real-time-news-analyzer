@@ -16,26 +16,38 @@ import java.sql.DriverManager
 
 
 object Main {
-    def main (args: Array[String]): Unit = {
 
+    // Global variables
+    var users = Seq[User]()
+    var username = ""
+    var loggedIn = false
+    var programRunning = true
+
+
+    // Main method
+    def main (args: Array[String]): Unit = {
+        
         // Load Users
         val admin = new User("Admin", "password")
         val user = new User("User", "password")
-        val users = Seq(admin, user)
-        
-        // App CLI Presentation
-        println("-----Movies Trends-----")
+        users = Seq(admin, user)
 
-        loading(1)
+        while (programRunning) {
+            
+            // App CLI Presentation
+            println("-----Movies Trends-----")
 
-        // Login
-        val username = login(users)
+            loading(1)
 
-        // Login success
-        println("Login success. Welcome " + username)
+            // Login
+            login()
 
-        // Main menu
-        displayMenu()
+            // Login success
+            loading("Login success. Welcome " + username, 1)
+            
+            // Main menu
+            displayMenu()
+        }
 
         // Exit
         loading("Terminating program...", 1)
@@ -45,18 +57,49 @@ object Main {
     } // end main
 
 
+        // Displays Main Menu
+    def displayMenu(): Unit = {
+        
+        var on = true
+
+        while (loggedIn && on) {
+            // display menu
+            println("Main menu")
+            println("1. Update username/password")
+            println("2. Get Data")
+            println("3. Analyze Data")
+            println("4. Logout")
+            println("0. Exit the program")
+            print("COMMAND > ")
+            val command = readLine()
+
+            command match {
+                case "1" => updateUserMenu()
+                case "2" => fetchAPI()
+                case "3" => displayAnalyzeMenu()
+                case "4" => loggedIn = false
+                case "0" =>  { 
+                    on = false
+                    programRunning = false
+                }
+                case _ => println("Command not found!!! Please enter a valid command!")
+            }
+
+        } // end while
+
+    } // end displayMenu
+
+
 
     // Handles login
-    def login(users: Seq[User]): String = {
+    def login() = {
 
         var usernameInput = ""
         var passwordInput = ""
 
-
-        var loginSuccess = false;
-
-        while (!loginSuccess) {
-            // First readLine is skipped for some reason
+        while (!loggedIn) {
+            
+            println("LOGIN")
             print("Enter your username: ")
             usernameInput = readLine()
 
@@ -67,18 +110,18 @@ object Main {
             if (usernameInput.length() > 0 && passwordInput.length() > 0) {
                 for (user <- users) {
                     if (user.getUsername == usernameInput && user.getPassword == passwordInput) {
-                        loginSuccess = true
+                        loggedIn = true
+                        username = usernameInput
                     }
                 }
-            } else {
-                loading(1)
-                println("Login fail. Please try again")
-            } // end if else
-        
+            }  
+
+            loading("Logging in...", 1)
+            if (loggedIn != true) {
+                loading("Login fail. Please try again", 1)
+            }
         
         } // end while
-
-        usernameInput
 
     } // end login
 
@@ -94,44 +137,67 @@ object Main {
             println("1. Update USERNAME")
             println("2. Update PASSWORD")
             println("0. Back to Main Menu")
-
+            print("COMMAND > ")
             val command = readLine()
 
             command match {
                 case "1" => {
                     loading(1)
-                    print("Please provide CURRENT username: ")
-                    val username = readLine()
+                    println("Your CURRENT username: " + username)
                     print("Please provide NEW username: ")
                     val value = readLine()
-                    updateUsernamePassword("username", username, value)
-                }
+
+                    loading("Updating username...", 1)
+                    if (value.length() > 0) {
+                        // update username here
+                        for(user <- users) {
+                            if(user.getUsername == username) {
+                                user.setUsername(value)
+                                username = value
+                                println("Your username has been update to " + value)
+                                loading(1)
+                            }
+                        } // end for
+                    } else {
+                        loading("Username cannot be empty. Update failed", 1)
+                    } // end if else
+                    
+                } // end case 1
                 case "2" => {
                     loading(1)
                     var passwordNotMatch = true
                     var value = ""
 
-                    print("Please provide your username: ")
-                    val username = readLine()
-
+                    println("Change password for " +  username)
+                    
                     while (passwordNotMatch) {
                         
                         print("Please provide new password: ")
-                        val value = readLine()
+                        value = readLine()
                         print("Please confirm new password: ")
                         val value2 = readLine()
 
-                        if (value == value2) passwordNotMatch = false
+                        if (value == value2) {
+                            passwordNotMatch = false
+                        } else {
+                            println("Passwords do NOT match. Please retype...")
+                        }
 
-                    }
+                    } // end while
 
                     if (value.length() > 0) {
-                        println("Passwords match. Updating..")
-                        loading(1)
-                        updateUsernamePassword("password", username, value)
-                    }
+                        loading("Passwords match. Updating password...", 1)
+                        // Update password here
+                        for(user <- users) {
+                            if (user.getUsername == username) {
+                                user.setPassword(value)
+                                println("Password was successfully updated...")
+                                loading(1)
+                            }
+                        }
+                    } // end if
                     
-                }
+                } // case 2
                 case "0" => on = false
                 case _ => println("Command not found!!! Please enter a valid command!")
             }
@@ -140,50 +206,6 @@ object Main {
         } // end while
 
     } // end updateUserMEnu
-
-
-    def updateUsernamePassword(column: String, username: String, value: String): Unit = {
-
-        // Hive connection
-        var connection: java.sql.Connection = null;
-
-          
-        try {
-            var driverName = "org.apache.hive.jdbc.HiveDriver"
-            val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/project1"
-
-            Class.forName(driverName)
-
-            connection = DriverManager.getConnection(connectionString, "", "")
-            val statement = connection.createStatement()
-
-            var hiveQuery = s"UPDATE users SET ${column}='${value}' WHERE username='${username}'";
-            
-            var hiveResponse = statement.executeQuery(hiveQuery)
-
-            loading(s"${column} was successfully updated...", 1)
-
-        } catch {
-            case exception: Throwable => {
-                exception.printStackTrace();
-                throw new Exception(s"${exception.getMessage()}")
-            }
-        } finally {
-            try {
-                if (connection != null) connection.close()
-            } catch {
-                case exception: Throwable => {
-                    exception.printStackTrace();
-                    throw new Exception(s"${exception.getMessage()}")
-                }
-            }
-        } // end try catch hive
-
-    
-
-    } // end update Username
-
-
 
 
     // Fetches data from TMDB
@@ -195,34 +217,6 @@ object Main {
         print(result)
         
     } // end fetchAPI
-
-    
-    // Displays Main Menu
-    def displayMenu(): Unit = {
-        
-        var on = true
-
-        while (on) {
-            // display menu
-            println("Main menu")
-            println("1. Update username/password")
-            println("2. Get Data")
-            println("3. Analyze Data")
-            println("0. Exit the program")
-
-            val command = readLine()
-
-            command match {
-                case "1" => updateUserMenu()
-                case "2" => fetchAPI()
-                case "3" => displayAnalyzeMenu()
-                case "0" => on = false
-                case _ => println("Command not found!!! Please enter a valid command!")
-            }
-
-        } // end while
-
-    } // end displayMenu
 
 
     // Display sub menu Analyze
@@ -240,7 +234,7 @@ object Main {
             println("6. Income - What are the top 10 grossing movies of 2021 so far?")
             println("7. Income - What is the total gross income of movies in 2019, 2020, and 2021 so far?")
             println("0. Go Back to Main Menu")
-
+            print("COMMAND > ")
             val command = readLine()
 
             command match {
