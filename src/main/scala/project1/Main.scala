@@ -208,17 +208,6 @@ object Main {
     } // end updateUserMEnu
 
 
-    // Fetches data from TMDB
-    def fetchAPI(): Unit = {
-        val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
-        loading("Fetching Data...")
-        val result = scala.io.Source.fromURL(url).mkString
-        loading("Printing Data...", 1)
-        print(result)
-        
-    } // end fetchAPI
-
-
     // Display sub menu Analyze
     def displayAnalyzeMenu(): Unit = {
         var on = true
@@ -265,6 +254,51 @@ object Main {
         println(text)
         Thread.sleep((delay * 1000).toInt)
     }
+
+    // Fetches data from TMDB
+    def fetchAPI(): Unit = {
+        val url = "https://api.themoviedb.org/3/discover/movie?api_key=a8efcb3705ef6973f51b697d643a61b7&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1&year=2021&with_watch_monetization_types=flatrate"
+        loading("Fetching Data...")
+        val result = scala.io.Source.fromURL(url).mkString
+        loading("Loading Data into Hive...", 1)
+        
+        // Hive
+        var connection: java.sql.Connection = null;
+
+        try {
+            var driverName = "org.apache.hive.jdbc.HiveDriver"
+            val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/default"
+
+            Class.forName(driverName)
+            connection = DriverManager.getConnection(connectionString, "", "")
+            
+            val statement = connection.createStatement();
+            var hiveQuery = "SELECT * FROM testjson LIMIT 5"
+            val result = statement.executeQuery(hiveQuery)
+
+            while (result.next()) {
+                println(s"Column 1: ${result.getString(1)}")
+            }
+        } catch {
+            case ex: Throwable => {
+                ex.printStackTrace();
+                throw new Exception(s"${ex.getMessage}")
+            }
+        } finally {
+            try {
+                if (connection != null) connection.close()
+            } catch {
+                case ex: Throwable => {
+                    ex.printStackTrace()
+                    throw new Exception(s"${ex.getMessage}")
+                }
+            }
+        } // end try catch finally
+
+
+        // End Hive
+
+    } // end fetchAPI
 
 
 } // end class
