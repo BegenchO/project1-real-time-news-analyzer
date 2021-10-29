@@ -4,6 +4,7 @@ package project1;
 import scala.io.StdIn.readLine  // User CL Input
 import java.io.IOException
 import scala.util.Try
+import net.liftweb.json._
 
 import project1.User
 
@@ -260,25 +261,31 @@ object Main {
         val url = "https://api.themoviedb.org/3/discover/movie?api_key=a8efcb3705ef6973f51b697d643a61b7&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1&year=2021&with_watch_monetization_types=flatrate"
         loading("Fetching Data...")
         val result = scala.io.Source.fromURL(url).mkString
+        val json = parse(result)
+        println(json)
+
         loading("Loading Data into Hive...", 1)
         
         // Hive
         var connection: java.sql.Connection = null;
-
+/*
         try {
             var driverName = "org.apache.hive.jdbc.HiveDriver"
             val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/default"
 
             Class.forName(driverName)
             connection = DriverManager.getConnection(connectionString, "", "")
-            
             val statement = connection.createStatement();
+
+            // try creating table and loading data here
+
             var hiveQuery = "SELECT * FROM testjson LIMIT 5"
             val result = statement.executeQuery(hiveQuery)
 
             while (result.next()) {
                 println(s"Column 1: ${result.getString(1)}")
             }
+
         } catch {
             case ex: Throwable => {
                 ex.printStackTrace();
@@ -295,7 +302,7 @@ object Main {
             }
         } // end try catch finally
 
-
+        */
         // End Hive
 
     } // end fetchAPI
