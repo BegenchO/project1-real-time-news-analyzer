@@ -8,6 +8,14 @@ import net.liftweb.json._
 
 import project1.User
 
+// HDFS file Imports
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.Path
+import java.io.PrintWriter
+
+
+
 // Hive Imports
 import java.sql.SQLException
 import java.sql.Connection
@@ -256,19 +264,35 @@ object Main {
         Thread.sleep((delay * 1000).toInt)
     }
 
+
     // Fetches data from TMDB
     def fetchAPI(): Unit = {
-        val url = "https://api.themoviedb.org/3/discover/movie?api_key=a8efcb3705ef6973f51b697d643a61b7&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1&year=2021&with_watch_monetization_types=flatrate"
+        
+        val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
         loading("Fetching Data...")
-        val result = scala.io.Source.fromURL(url).mkString
-        val json = parse(result)
-        println(json)
+        val apiResult = scala.io.Source.fromURL(url).mkString
+        
 
+/*      // lift json
+        implicit val formats = DefaultFormats
+        val json = parse(result)
+        val data = json.extract[apiResponse]
+        println(data.movies.length)
+
+        for (movie <- data.movies) {
+            println("Movie: ")
+            println(movie)
+        }
+*/      // end lift json
+
+        // Need to save to hdfs to load later
+        createFileFromAPI(apiResult)
+/*
         loading("Loading Data into Hive...", 1)
         
         // Hive
         var connection: java.sql.Connection = null;
-/*
+
         try {
             var driverName = "org.apache.hive.jdbc.HiveDriver"
             val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/default"
@@ -279,12 +303,12 @@ object Main {
 
             // try creating table and loading data here
 
-            var hiveQuery = "SELECT * FROM testjson LIMIT 5"
-            val result = statement.executeQuery(hiveQuery)
+            var hiveQuery = "CREATE TABLE jsonMovies(str String)"
+            statement.execute(hiveQuery)
 
-            while (result.next()) {
-                println(s"Column 1: ${result.getString(1)}")
-            }
+            hiveQuery = "LOAD DATA INPATH " + path + " INTO TABLE jsonMovies"
+
+            statement.execute(hiveQuery)
 
         } catch {
             case ex: Throwable => {
@@ -302,10 +326,40 @@ object Main {
             }
         } // end try catch finally
 
-        */
+      */  
         // End Hive
 
     } // end fetchAPI
 
 
+
+    def createFileFromAPI(jsonData: String): Unit = {
+        val path = "hdfs://sandbox-hdp.hortonworks.com:8020/user/maria_dev/project1/"
+        val filename = path + "movieData.json"
+
+        val conf = new Configuration()
+        val fs = FileSystem.get(conf)
+
+        // Check if file exists and delete if does
+        println("Checking if file alreay exists...")
+        val filepath = new Path(filename)
+        val isExisting = fs.exists(filepath)
+        if (isExisting) {
+            println("File already exists. Removing it...")
+            fs.delete(filepath, false)
+        }
+
+        val output = fs.create(new Path(filename))
+        
+        val writer = new PrintWriter(output)
+        writer.write(jsonData)
+        writer.close()
+
+        println(s"File ${filename} successfully created")
+     
+    }
+
+
 } // end class
+
+//case class apiResponse(page: Int, movies: List[JObject])
