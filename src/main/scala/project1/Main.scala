@@ -231,7 +231,7 @@ object Main {
             val command = readLine()
 
             command match {
-                case "1" => println("Top 10 viewed movies are...")
+                case "1" => executeHiveCommand(List(("SELECT get_json_object(json, '$.title') FROM jsonmovies", "query", "Movie Title")))
                 case "2" => println("Top 10 rated movies are...")
                 case "3" => println("Top 50 movies average rating is...")
                 case "4" => println("Average length of movies...")
@@ -316,14 +316,14 @@ object Main {
         val query2 = "LOAD DATA LOCAL INPATH '" + filepath + "' INTO TABLE jsonMovies"
         val queryType2 = "execute"
 
-        executeHiveCommand(List((query1, queryType1), (query2, queryType2)))
+        executeHiveCommand(List((query1, queryType1, ""), (query2, queryType2, "")))
 
     } // end loadData()
 
 
 
     // Make Hive code reusable
-    def executeHiveCommand(queries: List[(String, String)]) {
+    def executeHiveCommand(queries: List[(String, String, String)]) {
         var connection: java.sql.Connection = null;
 
         try {
@@ -339,7 +339,11 @@ object Main {
                 if (query._2 == "execute") {
                     statement.execute(query._1)
                 } else {
-                    statement.executeQuery(query._1)
+                    var response = statement.executeQuery(query._1)
+                    println(query._3)
+                    while (response.next()) {
+                        println(response.getString(1))
+                    }
                 }
             } // end for 
 
