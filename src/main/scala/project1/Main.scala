@@ -6,10 +6,6 @@ import java.io.IOException
 import scala.util.Try
 import java.io.PrintWriter
 
-import project1.User
-import project1.Analyze
-
-
 // Hive Imports
 import java.sql.SQLException
 import java.sql.Connection
@@ -231,7 +227,7 @@ object Main {
             val command = readLine()
 
             command match {
-                case "1" => executeHiveCommand(List(("SELECT get_json_object(json, '$.title') FROM jsonmovies", "query", "Movie Title")))
+                case "1" => executeHiveCommand(List(("SELECT get_json_object(json, '$.title') FROM movies", "query", "Movie Title")))
                 case "2" => println("Top 10 rated movies are...")
                 case "3" => println("Top 50 movies average rating is...")
                 case "4" => println("Average length of movies...")
@@ -263,13 +259,9 @@ object Main {
     // First time app run will load data into Hive
     def fetchStoreLoad(): Unit = {
 
-        val apiResult = Analyze.getData()
-   /*     
         // 1. Fetch data from TMDB API
         loading("Fetching Data...", 1)
-        val apiResult = fetchData()
-      
-       */ 
+        val apiResult = Api.getData()
         
         // 2. Saves json data into a file locally
         loading("Saving data to file...", 1)
@@ -281,13 +273,6 @@ object Main {
 
     } // end fetch store load()
 
-
-    // Fetches Data from TMDB API
-    def fetchData(): String = {
-        val url = "https://api.themoviedb.org/3/movie/popular?api_key=a8efcb3705ef6973f51b697d643a61b7&language=en-US&page=1"
-        val apiResult = scala.io.Source.fromURL(url).mkString
-        apiResult // Return Data
-    }
 
 
     // Stores data in a file on VM
@@ -309,11 +294,11 @@ object Main {
     def loadData(filepath: String): Unit = {
 
         // Create table
-        val query1 = "CREATE TABLE IF NOT EXISTS jsonMovies(json String)"
+        val query1 = "CREATE TABLE IF NOT EXISTS movies(json String)"
         val queryType1 = "execute"
 
         // Load data into created table
-        val query2 = "LOAD DATA LOCAL INPATH '" + filepath + "' INTO TABLE jsonMovies"
+        val query2 = "LOAD DATA LOCAL INPATH '" + filepath + "' INTO TABLE movies"
         val queryType2 = "execute"
 
         executeHiveCommand(List((query1, queryType1, ""), (query2, queryType2, "")))
