@@ -28,7 +28,7 @@ object Main {
     def main (args: Array[String]): Unit = {
         
         // Create Users when app starts
-        val admin = new User("Admin", "password")
+        val admin = new User("Admin", "password", true)
         val user = new User("User", "password")
         users = Seq(admin, user)
 
@@ -36,7 +36,9 @@ object Main {
         while (programRunning) {
             
             // App CLI Presentation
+            addLine()
             println("-----Movies Trends-----")
+            addLine()
 
             loading(1)
 
@@ -62,20 +64,28 @@ object Main {
 
         while (loggedIn && on) {
             // display menu
+            addLine()
             println("Main menu")
+            addLine()
             println("1. Update username/password")
-            println("2. Get Data")
-            println("3. Analyze Data")
-            println("4. Logout")
+            if (checkIfAdmin) println("2.0 Get Data")   // Hide this command from regular users
+            println("2. Analyze Data")
+            println("3. Logout")
             println("0. Exit the program")
             print("COMMAND > ")
             val command = readLine()
 
             command match {
                 case "1" => updateUserMenu()
-                case "2" => fetchStoreLoad()
-                case "3" => displayAnalyzeMenu()
-                case "4" => loggedIn = false
+                case "2.0" => {
+                    if (checkIfAdmin()) {
+                        fetchStoreLoad()
+                    } else {
+                        println("Access denied!")
+                    }
+                } // end case
+                case "2" => displayAnalyzeMenu()
+                case "3" => loggedIn = false
                 case "0" =>  { 
                     on = false
                     programRunning = false
@@ -96,8 +106,10 @@ object Main {
         var passwordInput = ""
 
         while (!loggedIn) {
-            
+
+            addLine()
             println("LOGIN")
+            addLine()
             print("Enter your username: ")
             usernameInput = readLine()
 
@@ -133,7 +145,9 @@ object Main {
 
         while(on) {
             // display menu
+            addLine()
             println("Update username/password")
+            addLine()
             println("1. Update USERNAME")
             println("2. Update PASSWORD")
             println("0. Back to Main Menu")
@@ -214,7 +228,9 @@ object Main {
 
         while (on) {
             // display Analyze Menu
+            addLine()
             println("Analyze Data")
+            addLine()
             println("1. View - What are the most viewed 10 movies of post pandemic period?")
             println("2. Rating - What are the top 10 highly rated movies of post pandemic period?")
             println("3. Rating - What are the average ratings of top 50 movies in 2019, 2020 and 2021 so far?")
@@ -227,7 +243,13 @@ object Main {
             val command = readLine()
 
             command match {
-                case "1" => executeHiveCommand(List(("SELECT get_json_object(json, '$.title') FROM movies", "query", "Movie Title")))
+                case "1" => { 
+                    executeHiveCommand(List((
+                        "SELECT get_json_object(json, '$.title'), CAST(get_json_object(json, '$.popularity') AS int) as popularity FROM movies SORT BY popularity DESC LIMIT 10", 
+                        "query", 
+                        "Movie Title \t | \t Popularity Rating"
+                    ))) 
+                }
                 case "2" => println("Top 10 rated movies are...")
                 case "3" => println("Top 50 movies average rating is...")
                 case "4" => println("Average length of movies...")
@@ -237,7 +259,17 @@ object Main {
                 case "0" => on = false
                 case _ => println("Command not found!!! Please enter a valid command!")
             }
-        }
+        } // end while
+
+
+          // V- Most viewed movies of post-pandemic period
+        // R- Highly rated movies of post-pandemic period
+        // R- Average rating of movies in 2019 vs 2020 vs 2021
+        // L- How average length of movies changed over the past 5 years
+        // I- Average gross income of each genre in 2020
+        // I- Top 10 grossing movies of 2021
+        // I- Total gross income of movies in 2019 vs 2020 vs 2021
+
     } // end display analyze menu
 
 
@@ -255,20 +287,34 @@ object Main {
         Thread.sleep((delay * 1000).toInt)
     }
 
+    def addLine(): Unit = {
+        println("-------------------------")
+    }
+
+    def checkIfAdmin(): Boolean = {
+        var isAdmin = false
+        for (user <- users) {
+            if (username == user.getUsername && user.getIsAdmin == true) {
+                isAdmin = true
+            }
+        } // end for
+        isAdmin
+    }
+
 
     // First time app run will load data into Hive
     def fetchStoreLoad(): Unit = {
 
         // 1. Fetch data from TMDB API
-        loading("Fetching Data...", 1)
+        loading("Fetching Data. Please be patient...", 1)
         val apiResult = Api.getData()
         
         // 2. Saves json data into a file locally
-        loading("Saving data to file...", 1)
+        loading("Saving data to file. Please be patient...", 1)
         val filepath = storeData(apiResult) 
 
         // 3. Load data from file to Hive
-        loading("Loading Data into Hive...", 1)
+        loading("Loading Data into Hive. Please be patient...", 1)
         loadData(filepath)
 
     } // end fetch store load()
@@ -324,11 +370,22 @@ object Main {
                 if (query._2 == "execute") {
                     statement.execute(query._1)
                 } else {
+                    loading("Hive query in process. Please be patient...")
+
                     var response = statement.executeQuery(query._1)
+
+                    loading("Success! Displaying results...")
+                    addLine()
                     println(query._3)
+                    addLine()
+
                     while (response.next()) {
-                        println(response.getString(1))
+                        loading(1)
+                        println(s"${response.getString(1)}  \t | \t ${response.getString(2)}")
                     }
+                    addLine()
+                    loading(2)
+                    loading("Redirecting to Menu...", 2)
                 }
             } // end for 
 

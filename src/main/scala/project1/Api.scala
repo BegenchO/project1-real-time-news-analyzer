@@ -70,19 +70,5 @@ object Api {
 
         movieDataPerPage
     } // end getMovieDetails()
-   
 
-    
-
-
-    // V- Most viewed movies of post-pandemic period
-    // R- Highly rated movies of post-pandemic period
-            // sort by vote desc
-            // display title, profit = (revenue - budget)
-    // R- Average rating of movies in 2019 vs 2020 vs 2021
-    // L- How average length of movies changed over the past 5 years
-    // I- Average gross income of each genre in 2020
-    // I- Top 10 grossing movies of 2021
-    // I- Total gross income of movies in 2019 vs 2020 vs 2021
-
-}
+} // end class
