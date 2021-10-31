@@ -370,8 +370,10 @@ object Main {
                 if (query._2 == "execute") {
                     statement.execute(query._1)
                 } else {
-                    loading("Hive query in process. Please be patient...")
-
+                    loading("Hive query in process. Please be patient...", 1)
+                    addLine()
+                    loading("Did you know: " + project1.MovieFacts.getRandomFact())
+                    addLine()
                     var response = statement.executeQuery(query._1)
 
                     loading("Success! Displaying results...")
