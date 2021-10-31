@@ -7,6 +7,7 @@ import scala.util.Try
 import java.io.PrintWriter
 
 import project1.User
+import project1.Analyze
 
 
 // Hive Imports
@@ -261,10 +262,14 @@ object Main {
 
     // First time app run will load data into Hive
     def fetchStoreLoad(): Unit = {
-        
+
+        val apiResult = Analyze.getData()
+   /*     
         // 1. Fetch data from TMDB API
         loading("Fetching Data...", 1)
         val apiResult = fetchData()
+      
+       */ 
         
         // 2. Saves json data into a file locally
         loading("Saving data to file...", 1)
@@ -273,13 +278,13 @@ object Main {
         // 3. Load data from file to Hive
         loading("Loading Data into Hive...", 1)
         loadData(filepath)
-
-    } // end fetchAPI
+        
+    } // end fetch store load()
 
 
     // Fetches Data from TMDB API
     def fetchData(): String = {
-        val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
+        val url = "https://api.themoviedb.org/3/movie/popular?api_key=a8efcb3705ef6973f51b697d643a61b7&language=en-US&page=1"
         val apiResult = scala.io.Source.fromURL(url).mkString
         apiResult // Return Data
     }
