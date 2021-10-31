@@ -278,7 +278,7 @@ object Main {
         // 3. Load data from file to Hive
         loading("Loading Data into Hive...", 1)
         loadData(filepath)
-        
+
     } // end fetch store load()
 
 
@@ -308,6 +308,22 @@ object Main {
     // Loads data from file into Hive
     def loadData(filepath: String): Unit = {
 
+        // Create table
+        val query1 = "CREATE TABLE IF NOT EXISTS jsonMovies(json String)"
+        val queryType1 = "execute"
+
+        // Load data into created table
+        val query2 = "LOAD DATA LOCAL INPATH '" + filepath + "' INTO TABLE jsonMovies"
+        val queryType2 = "execute"
+
+        executeHiveCommand(List((query1, queryType1), (query2, queryType2)))
+
+    } // end loadData()
+
+
+
+    // Make Hive code reusable
+    def executeHiveCommand(queries: List[(String, String)]) {
         var connection: java.sql.Connection = null;
 
         try {
@@ -318,14 +334,14 @@ object Main {
             connection = DriverManager.getConnection(connectionString, "", "")
             val statement = connection.createStatement();
 
-
-            // Create table
-            var hiveQuery = "CREATE TABLE IF NOT EXISTS jsonMovies(json String)"
-            statement.execute(hiveQuery)
-
-            // Load data into created table
-            hiveQuery = "LOAD DATA LOCAL INPATH '" + filepath + "' INTO TABLE jsonMovies"
-            statement.execute(hiveQuery)
+            // query tuple = (query string, query type)
+            for (query <- queries) {
+                if (query._2 == "execute") {
+                    statement.execute(query._1)
+                } else {
+                    statement.executeQuery(query._1)
+                }
+            } // end for 
 
         } catch {
             case ex: Throwable => {
@@ -342,8 +358,7 @@ object Main {
                 }
             }
         } // end try catch finally
-
-    } // end loadData()
+    } // end hiveQuery()
 
 
 } // end class
