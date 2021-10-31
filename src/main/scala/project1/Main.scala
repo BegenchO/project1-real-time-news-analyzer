@@ -1,19 +1,12 @@
 package project1;
 
-// Other imports
-import scala.io.StdIn.readLine  // User CL Input
+// All imports
+import scala.io.StdIn.readLine
 import java.io.IOException
 import scala.util.Try
-import net.liftweb.json._
-
-import project1.User
-
-// HDFS file Imports
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.fs.Path
 import java.io.PrintWriter
 
+import project1.User
 
 
 // Hive Imports
@@ -22,6 +15,7 @@ import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.Statement
 import java.sql.DriverManager
+import java.io.File
 
 
 object Main {
@@ -36,11 +30,12 @@ object Main {
     // Main method
     def main (args: Array[String]): Unit = {
         
-        // Load Users
+        // Create Users when app starts
         val admin = new User("Admin", "password")
         val user = new User("User", "password")
         users = Seq(admin, user)
 
+        // Logged out
         while (programRunning) {
             
             // App CLI Presentation
@@ -49,10 +44,7 @@ object Main {
             loading(1)
 
             // Login
-            login()
-
-            // Login success
-            loading("Login success. Welcome " + username, 1)
+            login()            
             
             // Main menu
             displayMenu()
@@ -66,7 +58,7 @@ object Main {
     } // end main
 
 
-        // Displays Main Menu
+    // Displays Main Menu
     def displayMenu(): Unit = {
         
         var on = true
@@ -84,7 +76,7 @@ object Main {
 
             command match {
                 case "1" => updateUserMenu()
-                case "2" => fetchAPI()
+                case "2" => fetchStoreLoad()
                 case "3" => displayAnalyzeMenu()
                 case "4" => loggedIn = false
                 case "0" =>  { 
@@ -132,10 +124,12 @@ object Main {
         
         } // end while
 
+        loading("Login success. Welcome " + username, 1)
+
     } // end login
 
 
-
+    // Updates user information
     def updateUserMenu(): Unit = {
         
         var on = true
@@ -217,7 +211,7 @@ object Main {
     } // end updateUserMEnu
 
 
-    // Display sub menu Analyze
+    // Displays sub menu Analyze
     def displayAnalyzeMenu(): Unit = {
         var on = true
 
@@ -265,49 +259,67 @@ object Main {
     }
 
 
-    // Fetches data from TMDB
-    def fetchAPI(): Unit = {
+    // First time app run will load data into Hive
+    def fetchStoreLoad(): Unit = {
         
-        val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
-        loading("Fetching Data...")
-        val apiResult = scala.io.Source.fromURL(url).mkString
+        // 1. Fetch data from TMDB API
+        loading("Fetching Data...", 1)
+        val apiResult = fetchData()
         
+        // 2. Saves json data into a file locally
+        loading("Saving data to file...", 1)
+        val filepath = storeData(apiResult) 
 
-/*      // lift json
-        implicit val formats = DefaultFormats
-        val json = parse(result)
-        val data = json.extract[apiResponse]
-        println(data.movies.length)
-
-        for (movie <- data.movies) {
-            println("Movie: ")
-            println(movie)
-        }
-*/      // end lift json
-
-        // Need to save to hdfs to load later
-        createFileFromAPI(apiResult)
-/*
+        // 3. Load data from file to Hive
         loading("Loading Data into Hive...", 1)
-        
-        // Hive
+        loadData(filepath)
+
+    } // end fetchAPI
+
+
+    // Fetches Data from TMDB API
+    def fetchData(): String = {
+        val url = "https://api.themoviedb.org/3/movie/550?api_key=a8efcb3705ef6973f51b697d643a61b7"
+        val apiResult = scala.io.Source.fromURL(url).mkString
+        apiResult // Return Data
+    }
+
+
+    // Stores data in a file on VM
+    def storeData(jsonData: String): String = {
+      
+        val filepath = "/tmp/data.json" // Save your file in tmp to avoid permission issues
+        val writer = new PrintWriter(new File(filepath))
+        writer.write(jsonData)
+        writer.close()
+
+        println(s"File successfully created")
+
+        filepath // return filepath to load into hive
+     
+    } // end storeData()
+
+
+    // Loads data from file into Hive
+    def loadData(filepath: String): Unit = {
+
         var connection: java.sql.Connection = null;
 
         try {
             var driverName = "org.apache.hive.jdbc.HiveDriver"
-            val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/default"
+            val connectionString = "jdbc:hive2://sandbox-hdp.hortonworks.com:10000/project1"
 
             Class.forName(driverName)
             connection = DriverManager.getConnection(connectionString, "", "")
             val statement = connection.createStatement();
 
-            // try creating table and loading data here
 
-            var hiveQuery = "CREATE TABLE jsonMovies(str String)"
+            // Create table
+            var hiveQuery = "CREATE TABLE IF NOT EXISTS jsonMovies(json String)"
             statement.execute(hiveQuery)
 
-            hiveQuery = "LOAD DATA INPATH " + path + " INTO TABLE jsonMovies"
-
+            // Load data into created table
+            hiveQuery = "LOAD DATA LOCAL INPATH '" + filepath + "' INTO TABLE jsonMovies"
             statement.execute(hiveQuery)
 
         } catch {
@@ -326,40 +338,7 @@ object Main {
             }
         } // end try catch finally
 
-      */  
-        // End Hive
-
-    } // end fetchAPI
-
-
-
-    def createFileFromAPI(jsonData: String): Unit = {
-        val path = "hdfs://sandbox-hdp.hortonworks.com:8020/user/maria_dev/project1/"
-        val filename = path + "movieData.json"
-
-        val conf = new Configuration()
-        val fs = FileSystem.get(conf)
-
-        // Check if file exists and delete if does
-        println("Checking if file alreay exists...")
-        val filepath = new Path(filename)
-        val isExisting = fs.exists(filepath)
-        if (isExisting) {
-            println("File already exists. Removing it...")
-            fs.delete(filepath, false)
-        }
-
-        val output = fs.create(new Path(filename))
-        
-        val writer = new PrintWriter(output)
-        writer.write(jsonData)
-        writer.close()
-
-        println(s"File ${filename} successfully created")
-     
-    }
+    } // end loadData()
 
 
 } // end class
-
-//case class apiResponse(page: Int, movies: List[JObject])
