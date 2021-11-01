@@ -9,7 +9,7 @@ object Api {
         
         var allData = ""
 
-        val years = List("2019", "2020", "2021")
+        val years = List("2017", "2018", "2019", "2020", "2021")
 
         // Fetch movies by year
         for (year <- years) {

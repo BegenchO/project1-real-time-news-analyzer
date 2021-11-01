@@ -231,13 +231,12 @@ object Main {
             addLine()
             println("Analyze Data")
             addLine()
-            println("1. View - What are the most viewed 10 movies of post pandemic period?")
-            println("2. Rating - What are the top 10 highly rated movies of post pandemic period?")
-            println("3. Rating - What are the average ratings of top 50 movies in 2019, 2020 and 2021 so far?")
-            println("4. Length - How average length of movies changed over the past 5 years?")
-            println("5. Income - What is the average gross income of each movie genre in 2020?")
-            println("6. Income - What are the top 10 grossing movies of 2021 so far?")
-            println("7. Income - What is the total gross income of movies in 2019, 2020, and 2021 so far?")
+            println("1. Most popular 10 movies of post pandemic period")          
+            println("2. Most expensive 10 movies of the past 5 years")
+            println("3. Average income of movies in each of the past 5 years")
+            println("4. Average length of movies in each of the past 5 years")
+            println("5. Average income of movies in each month of 2020")
+            println("6. Number of movies with revenues over 100 mln dollars in each of the past 5 years")
             println("0. Go Back to Main Menu")
             print("COMMAND > ")
             val command = readLine()
@@ -250,25 +249,45 @@ object Main {
                         "Movie Title \t | \t Popularity Rating"
                     ))) 
                 }
-                case "2" => println("Top 10 rated movies are...")
-                case "3" => println("Top 50 movies average rating is...")
-                case "4" => println("Average length of movies...")
-                case "5" => println("Aveage gross income of each genre is...")
-                case "6" => println("Top 10 grossing movies are...")
-                case "7" => println("Total gross income of movies are...")
+                case "2" => { 
+                    executeHiveCommand(List((
+                        "SELECT get_json_object(json, '$.title'), CAST(get_json_object(json, '$.budget') AS int)/1000000 as budget FROM movies SORT BY budget DESC LIMIT 10", 
+                        "query", 
+                        "Movie Title \t | \t Budget"
+                    )), customText = " mln") 
+                }
+                case "3" => { 
+                    executeHiveCommand(List((
+                        "SELECT CAST(SUBSTRING(get_json_object(json, '$.release_date'), 1, 4) AS int) AS year, ROUND(AVG(CAST(get_json_object(json, '$.revenue') AS int)/1000000),1) as revenue FROM movies WHERE get_json_object(json, '$.revenue') > 0 GROUP BY CAST(SUBSTRING(get_json_object(json, '$.release_date'), 1, 4) AS int)", 
+                        "query", 
+                        "Year \t | \t Average Revenue"
+                    )), customText = " mln") 
+                }
+                case "4" => { 
+                    executeHiveCommand(List((
+                        "SELECT CAST(SUBSTRING(get_json_object(json, '$.release_date'), 1, 4) AS int) AS year, ROUND(AVG(CAST(get_json_object(json, '$.runtime') AS int)),0) as revenue FROM movies GROUP BY CAST(SUBSTRING(get_json_object(json, '$.release_date'), 1, 4) AS int)", 
+                        "query", 
+                        "Year \t | \t Average Runtime"
+                    )), customText = " mins") 
+                }
+                case "5" => { 
+                    executeHiveCommand(List((
+                        "SELECT CAST(SUBSTRING(get_json_object(json, '$.release_date'), 6, 2) AS int), ROUND(AVG(CAST(get_json_object(json, '$.revenue') AS int)/1000000),1) FROM movies WHERE CAST(SUBSTRING(get_json_object(json, '$.release_date'), 1, 4) AS int) = 2020 AND get_json_object(json, '$.revenue') > 0 GROUP BY CAST(SUBSTRING(get_json_object(json, '$.release_date'), 6, 2) AS int)", 
+                        "query", 
+                        "Year \t | \t Average Revenue"
+                    )), customText = " mln") 
+                }
+                case "6" => { 
+                    executeHiveCommand(List((
+                        "SELECT CAST(SUBSTRING(get_json_object(json, '$.release_date'), 1, 4) AS int), COUNT(CAST(get_json_object(json, '$.revenue') AS int)/1000000) FROM movies WHERE CAST(get_json_object(json, '$.revenue') AS int)/1000000 > 100 GROUP BY  CAST(SUBSTRING(get_json_object(json, '$.release_date'), 1, 4) AS int)", 
+                        "query", 
+                        "Year \t | \t Number of Movies"
+                    )), customText = " movies with revenues over 100 mln") 
+                }
                 case "0" => on = false
                 case _ => println("Command not found!!! Please enter a valid command!")
             }
         } // end while
-
-
-          // V- Most viewed movies of post-pandemic period
-        // R- Highly rated movies of post-pandemic period
-        // R- Average rating of movies in 2019 vs 2020 vs 2021
-        // L- How average length of movies changed over the past 5 years
-        // I- Average gross income of each genre in 2020
-        // I- Top 10 grossing movies of 2021
-        // I- Total gross income of movies in 2019 vs 2020 vs 2021
 
     } // end display analyze menu
 
@@ -307,6 +326,9 @@ object Main {
 
         // 1. Fetch data from TMDB API
         loading("Fetching Data. Please be patient...", 1)
+        addLine()
+        loading("DID YOU KNOW: " + project1.MovieFacts.getRandomFact())
+        addLine()
         val apiResult = Api.getData()
         
         // 2. Saves json data into a file locally
@@ -354,7 +376,7 @@ object Main {
 
 
     // Make Hive code reusable
-    def executeHiveCommand(queries: List[(String, String, String)]) {
+    def executeHiveCommand(queries: List[(String, String, String)], customText: String = "") {
         var connection: java.sql.Connection = null;
 
         try {
@@ -372,7 +394,7 @@ object Main {
                 } else {
                     loading("Hive query in process. Please be patient...", 1)
                     addLine()
-                    loading("Did you know: " + project1.MovieFacts.getRandomFact())
+                    loading("DID YOU KNOW: " + project1.MovieFacts.getRandomFact())
                     addLine()
                     var response = statement.executeQuery(query._1)
 
@@ -383,10 +405,10 @@ object Main {
 
                     while (response.next()) {
                         loading(1)
-                        println(s"${response.getString(1)}  \t | \t ${response.getString(2)}")
+                        println(s"${response.getString(1)}  \t | \t ${response.getString(2)} ${customText}")
                     }
                     addLine()
-                    loading(2)
+                    loading(3)
                     loading("Redirecting to Menu...", 2)
                 }
             } // end for 
