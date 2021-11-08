@@ -415,16 +415,18 @@ object Main {
 
         } catch {
             case ex: Throwable => {
-                ex.printStackTrace();
-                throw new Exception(s"${ex.getMessage}")
+                addLine()
+                println("Something went wrong. Please make sure the data exists in the data warehouse!!!")
+                addLine()
             }
         } finally {
             try {
                 if (connection != null) connection.close()
             } catch {
                 case ex: Throwable => {
-                    ex.printStackTrace()
-                    throw new Exception(s"${ex.getMessage}")
+                    addLine()
+                    println("Something went wrong. Please make sure the data exists in the data warehouse!!!")
+                    addLine()
                 }
             }
         } // end try catch finally
