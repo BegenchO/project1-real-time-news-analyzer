@@ -274,7 +274,7 @@ object Main {
                     executeHiveCommand(List((
                         "SELECT CAST(SUBSTRING(get_json_object(json, '$.release_date'), 6, 2) AS int), ROUND(AVG(CAST(get_json_object(json, '$.revenue') AS int)/1000000),1) FROM movies WHERE CAST(SUBSTRING(get_json_object(json, '$.release_date'), 1, 4) AS int) = 2020 AND get_json_object(json, '$.revenue') > 0 GROUP BY CAST(SUBSTRING(get_json_object(json, '$.release_date'), 6, 2) AS int)", 
                         "query", 
-                        "Year \t | \t Average Revenue"
+                        "Month \t | \t Average Revenue"
                     )), customText = " mln") 
                 }
                 case "6" => { 
