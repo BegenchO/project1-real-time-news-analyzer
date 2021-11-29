@@ -10,7 +10,9 @@ Project 1 has a login functionality and will load data by fetching it from TMDB 
 * Hive - version 3.1.2
 * Scala - version 2.11.8
 * Hadoop - version 3.2.2
-* HDFS
+* HDFS - version 2.6.5
+* Hortonworks Sandbox HDP - version 2.6.5
+* Visual Studio Code - version 1.62.3
 
 ## Features
 
