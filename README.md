@@ -27,7 +27,9 @@ To-do list:
 
 Following commands to get started
 > git clone https://github.com/BegenchO/project1.git
+
 > sbt
+
 > sbt package
 
 Copy the jar file to a Hadoop environment such as Hortonworks VM.
