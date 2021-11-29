@@ -15,25 +15,26 @@ Project 1 has a login functionality and will load data by fetching it from TMDB 
 ## Features
 
 List of features ready and TODOs for future development
-* Awesome feature 1
-* Awesome feature 2
-* Awesome feature 3
+* Retrieves data from TMDB API using predefined urls and number of pages dynamically
+* Data is trimmed and separated for query efficiency
+* Login credentials can be updated
+* Fetch API is ONLY accessible to the admin user
 
 To-do list:
-* Wow improvement to be done 1
-* Wow improvement to be done 2
+* Easily could integration user input to set the limit on the amount of data that is imported
+* Queries could be added or updated to allow the user to pass in different constraints such as years, genres to be analyzed
+* User credentials could be persisted to an OLTP database such as mongoDB Atlas
 
 ## Getting Started
 
-Following commands to get started
+Clone the project
 > git clone https://github.com/BegenchO/project1.git
-
+Install all packages by running sbt build
 > sbt
-
+Compile into a jar file
 > sbt package
 
-Copy the jar file to a Hadoop environment such as Hortonworks VM.
-If using Hortonworks VM,
+Copy the jar file to a Hadoop environment such as Hortonworks VM. If using Hortonworks VM, run it via spark-submit
 > spark-submit <packageName.jar>
 
 ## Usage
