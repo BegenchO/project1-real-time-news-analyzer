@@ -7,10 +7,10 @@ Project 1 has a login functionality and will load data by fetching it from TMDB 
 
 ## Technologies Used
 
-* Hive - version 1.0
+* Hive - version 3.1.2
 * Scala - version 2.11.8
-* Hadoop - version 3.0
-* HDFS - version 4.0
+* Hadoop - version 3.2.2
+* HDFS
 
 ## Features
 
@@ -24,24 +24,20 @@ To-do list:
 * Wow improvement to be done 2
 
 ## Getting Started
-   
-(include git clone command)
-(include all environment setup steps)
 
-> Be sure to include BOTH Windows and Unix command  
-> Be sure to mention if the commands only work on a specific platform (eg. AWS, GCP)
+Following commands to get started
+> git clone https://github.com/BegenchO/project1.git
+> sbt
+> sbt package
 
-- All the `code` required to get started
-- Images of what it should look like
+Copy the jar file to a Hadoop environment such as Hortonworks VM.
+If using Hortonworks VM,
+> spark-submit <packageName.jar>
 
 ## Usage
 
-> Here, you instruct other people on how to use your project after they’ve installed it. This would also be a good place to include screenshots of your project in action.
-
-## Contributors
-
-> Here list the people who have contributed to this project. (ignore this section, if its a solo project)
+> Run in Hadoop environment. Login screen will pop up once program is run. Refer to User.scala and Main.scala files for login credentials. Admin login has the ability to load data to be analyzed into Hive thus login as admin first. Once data is loaded into Hive, use the analysis menu to perform various queries and display them in the terminal. You may also opt to change the username or password of currently logged in user in the menu which will be reset to default credentials once program is rerun.
 
 ## License
 
-This project uses the following license: [<license_name>](<link>).
+This project uses the following license: [MIT](https://opensource.org/licenses/MIT).
